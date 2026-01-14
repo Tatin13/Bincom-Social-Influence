@@ -1,37 +1,40 @@
+
 import { UTMState, DubResponse } from '../types';
 
 /**
- * NOTE:
- * Dub.sh API must be called from a backend (Cloud Function).
- * This frontend implementation is in a holding state
- * while billing approval is pending.
+ * Backend Cloud Function endpoint.
+ * This should be configured via environment variables in Vercel/Netlify for scalability.
  */
 const BACKEND_URL = 'https://create-dub-link-1024194900952.europe-west1.run.app';
-
 
 /**
  * Constructs the full URL with UTM parameters
  */  
 export const constructLongUrl = (state: UTMState): string => {
-  const url = new URL(
-    state.baseUrl.startsWith('http')
-      ? state.baseUrl
-      : `https://${state.baseUrl}`
-  );
+  try {
+    const url = new URL(
+      state.baseUrl.startsWith('http')
+        ? state.baseUrl
+        : `https://${state.baseUrl}`
+    );
 
-  url.searchParams.set('utm_source', state.source);
-  url.searchParams.set('utm_medium', state.medium);
-  url.searchParams.set('utm_campaign', state.campaign);
+    url.searchParams.set('utm_source', state.source);
+    url.searchParams.set('utm_medium', state.medium);
+    url.searchParams.set('utm_campaign', state.campaign);
 
-  if (state.content.trim()) {
-    url.searchParams.set('utm_content', state.content.trim());
+    if (state.content?.trim()) {
+      url.searchParams.set('utm_content', state.content.trim());
+    }
+
+    if (state.id?.trim()) {
+      url.searchParams.set('utm_id', state.id.trim());
+    }
+
+    return url.toString();
+  } catch (e) {
+    console.error("URL Construction failed", e);
+    return state.baseUrl;
   }
-
-  if (state.id.trim()) {
-    url.searchParams.set('utm_id', state.id.trim());
-  }
-
-  return url.toString();
 };
 
 /**
@@ -42,9 +45,7 @@ export const generateShortLink = async (
   metadata: UTMState
 ): Promise<DubResponse> => {
   if (!BACKEND_URL) {
-    throw new Error(
-      'Short link service is not yet configured. Backend integration pending approval.'
-    );
+    throw new Error('Short link service (BACKEND_URL) is not configured in the environment.');
   }
 
   try {
@@ -57,10 +58,8 @@ export const generateShortLink = async (
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(
-        errorData?.error || 'Failed to generate short link'
-      );
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.error || `Service returned status ${response.status}`);
     }
 
     const data = await response.json();
@@ -71,8 +70,9 @@ export const generateShortLink = async (
       createdAt: new Date().toISOString(),
       metadata,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Short link generation error:', error);
-    throw error;
+    // In test environment, if the backend fails, we show the long URL as a fallback or throw error
+    throw new Error(error.message || 'The link shortening service is currently unavailable.');
   }
 };
