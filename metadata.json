@@ -1,5 +1,5 @@
 {
-  "name": "Bincom Social Influence URL Generator",
-  "description": "Internal tool for standardizing UTM creation and generating shortened links via Dub.sh for Bincom Social Influence campaigns.",
+  "name": "BincomURLGen",
+  "description": "Internal tool for standardizing UTM creation and generating shortened links via Dub.sh for Bincom Social Influence and Other campaigns.",
   "requestFramePermissions": []
 }

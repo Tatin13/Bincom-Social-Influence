@@ -3,32 +3,35 @@ import { UTMState, DubResponse } from '../types';
 
 /**
  * Backend Cloud Function endpoint.
- * This should be configured via environment variables in Vercel/Netlify for scalability.
  */
 const BACKEND_URL = 'https://create-dub-link-1024194900952.europe-west1.run.app';
 
 /**
- * Constructs the full URL with UTM parameters
+ * Constructs the full URL with UTM parameters and additional custom parameters
  */  
-export const constructLongUrl = (state: UTMState): string => {
+export const constructLongUrl = (state: UTMState, isSocialFlow: boolean): string => {
   try {
-    const url = new URL(
-      state.baseUrl.startsWith('http')
-        ? state.baseUrl
-        : `https://${state.baseUrl}`
-    );
-
-    url.searchParams.set('utm_source', state.source);
-    url.searchParams.set('utm_medium', state.medium);
-    url.searchParams.set('utm_campaign', state.campaign);
-
-    if (state.content?.trim()) {
-      url.searchParams.set('utm_content', state.content.trim());
+    let urlString = state.baseUrl.trim();
+    if (!urlString.startsWith('http')) {
+      urlString = `https://${urlString}`;
     }
 
-    if (state.id?.trim()) {
-      url.searchParams.set('utm_id', state.id.trim());
+    const url = new URL(urlString);
+
+    if (isSocialFlow) {
+      if (state.source) url.searchParams.set('utm_source', state.source);
+      if (state.medium) url.searchParams.set('utm_medium', state.medium);
+      if (state.campaign) url.searchParams.set('utm_campaign', state.campaign);
+      if (state.content?.trim()) url.searchParams.set('utm_content', state.content.trim());
+      if (state.id?.trim()) url.searchParams.set('utm_id', state.id.trim());
     }
+
+    // Add unlimited additional parameters
+    state.additionalParams.forEach(param => {
+      if (param.key.trim() && param.value.trim()) {
+        url.searchParams.set(param.key.trim(), param.value.trim());
+      }
+    });
 
     return url.toString();
   } catch (e) {
@@ -44,10 +47,6 @@ export const generateShortLink = async (
   longUrl: string,
   metadata: UTMState
 ): Promise<DubResponse> => {
-  if (!BACKEND_URL) {
-    throw new Error('Short link service (BACKEND_URL) is not configured in the environment.');
-  }
-
   try {
     const response = await fetch(BACKEND_URL, {
       method: 'POST',
@@ -72,7 +71,6 @@ export const generateShortLink = async (
     };
   } catch (error: any) {
     console.error('Short link generation error:', error);
-    // In test environment, if the backend fails, we show the long URL as a fallback or throw error
     throw new Error(error.message || 'The link shortening service is currently unavailable.');
   }
 };

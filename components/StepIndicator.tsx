@@ -7,43 +7,23 @@ interface StepIndicatorProps {
 }
 
 const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep }) => {
-  const steps = [
-    'Base',
-    'Source',
-    'Medium',
-    'Campaign',
-    'Content',
-    'ID',
-    'Confirm'
-  ];
+  // We use a simpler bullet style that handles the dynamic skipping better
+  const totalVisibleSteps = 8; // Base -> Source -> Medium -> Campaign -> Content -> ID -> Params -> Confirm
+  const currentProgress = Math.min(currentStep, Step.CONFIRMATION);
 
   return (
-    <div className="flex items-center justify-between mb-8 overflow-x-auto pb-4 scrollbar-hide">
-      {steps.map((label, idx) => {
-        const isActive = idx <= currentStep;
-        const isCurrent = idx === currentStep;
-
+    <div className="flex gap-1.5 h-1.5 w-full">
+      {Array.from({ length: totalVisibleSteps }).map((_, idx) => {
+        const stepNum = idx + 1;
+        const isActive = stepNum <= currentProgress;
+        
         return (
-          <div key={label} className="flex flex-col items-center flex-1 min-w-[60px]">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold mb-2 transition-all duration-300 ${
-                isCurrent
-                  ? 'bg-blue-600 text-white ring-4 ring-blue-100'
-                  : isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-500'
-              }`}
-            >
-              {idx + 1}
-            </div>
-            <span
-              className={`text-[10px] uppercase tracking-wider font-semibold ${
-                isActive ? 'text-blue-600' : 'text-gray-400'
-              }`}
-            >
-              {label}
-            </span>
-          </div>
+          <div 
+            key={idx} 
+            className={`h-full rounded-full transition-all duration-500 flex-1 ${
+              isActive ? 'bg-blue-600' : 'bg-slate-100'
+            }`}
+          />
         );
       })}
     </div>

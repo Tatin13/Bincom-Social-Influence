@@ -6,10 +6,10 @@ export const getSuggestions = async (state: UTMState, type: 'content' | 'id'): P
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
     
-    const prompt = `You are a digital marketing expert for Bincom Social Influence. 
+    const prompt = `You are the digital marketing engine for BincomURLGen. 
     Analyze the destination: ${state.baseUrl}
-    Campaign: ${state.campaign}
-    Source: ${state.source}
+    Campaign: ${state.campaign || 'General'}
+    Source: ${state.source || 'Standard'}
     
     Suggest 5 professional and standard values for the UTM ${type} parameter. 
     Values should be lowercase, kebab-case, and highly relevant to the context.`;
